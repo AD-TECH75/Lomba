@@ -4,81 +4,136 @@
 		<meta charset="UTF-8" />
 		<title>Peta Jawa Timur</title>
 		<style>
-			/* Pengaturan Dasar Halaman */
+			/* ==================================== */
+			/* 1. Pengaturan Dasar Halaman & Peta SVG */
+			/* ==================================== */
 			body {
-				font-family: Arial, sans-serif;
+				font-family: "Inter", sans-serif;
 				margin: 20px;
 				text-align: center;
+				background-color: #f0f4f8;
 			}
 
-			/* 1.1. Pengaturan Peta SVG (Agar Muncul dan Interaktif) */
+			h2 {
+				color: #17363a;
+				margin-bottom: 30px;
+			}
+
+			#map-container {
+				position: relative;
+				margin: 20px auto;
+				width: 90%;
+				max-width: 900px;
+				border-radius: 12px;
+				overflow: hidden;
+				box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+			}
+
 			svg {
 				display: block !important;
-				width: 80%; /* Sesuaikan ukuran wadah */
+				width: 100%;
 				height: auto;
-				margin: 20px auto;
-				overflow: visible;
-				position: relative;
-				border: 1px solid #ccc;
+				background-color: #e8ecef;
 			}
 
 			/* Gaya default untuk setiap daerah */
 			svg path {
-				fill: #d3d3d3;
+				fill: #7394aa; /* Warna daerah default */
 				stroke: #ffffff;
-				stroke-width: 0.5;
-				transition: fill 0.2s ease;
+				stroke-width: 0.8;
+				transition: fill 0.2s ease, transform 0.1s;
 				cursor: pointer;
 			}
 
-			/* Gaya saat mouse berada di atas daerah (hover) */
-			svg path:hover,
-			svg path.hovered {
-				fill: #274c77;
-				opacity: 0.9;
+			/* Gaya HOVER (Hanya untuk perubahan warna, TIDAK memicu tooltip) */
+			svg path:hover {
+				fill: #5980a3;
 			}
 
-			/* 1.2. Gaya Tooltip Speech Bubble */
+			/* Gaya saat daerah sedang diklik dan pop-up aktif */
+			svg path.clicked {
+				fill: #3e5f8a;
+				transform: scale(1.01);
+			}
+
+			/* ==================================== */
+			/* 2. Gaya Tooltip Speech Bubble STATIS */
+			/* ==================================== */
 			#tooltip {
 				position: absolute;
-				pointer-events: none; /* KRITIS: Biarkan mouse menembus tooltip */
-				opacity: 0;
+				opacity: 0; /* HILANGKAN secara default */
+				pointer-events: none; /* NON-INTERAKTIF secara default */
 				z-index: 1000;
 				width: 200px;
-				border-radius: 10px;
-				border: 2px solid black;
-				overflow: hidden;
-				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-				transition: opacity 0.1s;
+				transition: opacity 0.2s, transform 0.2s;
+				transform: translate(-50%, -110%);
 			}
 
-			#tooltip-image-container {
-				width: 100%;
-				height: 100px;
-				background-size: cover;
-				background-position: center;
-				background-color: #6c757d;
-				border-top-left-radius: 8px;
-				border-top-right-radius: 8px;
-				border-bottom: 2px solid black;
-			}
-
-			#tooltip-text-container {
+			#tooltip-content-wrapper {
 				background-color: #17363a;
 				color: white;
-				font-family: Arial, sans-serif;
-				font-weight: bold;
+				border: 2px solid #000;
+				border-radius: 10px;
+				padding: 10px 0;
 				text-align: center;
-				padding: 15px 10px;
-				font-size: 18px;
-				line-height: 1;
 				position: relative;
-				border-bottom-left-radius: 8px;
-				border-bottom-right-radius: 8px;
+				box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 			}
 
-			/* Membuat Ekor (Speech Bubble Tail) */
-			#tooltip-text-container::after {
+			#tooltip-title {
+				margin: 0;
+				padding: 0 15px;
+				font-size: 24px;
+				font-weight: bold;
+				text-transform: uppercase;
+			}
+
+			.divider {
+				height: 2px;
+				background-color: #ffffff;
+				margin: 10px 10px;
+				border-radius: 1px;
+			}
+
+			#tooltip-button {
+				pointer-events: auto; /* Harus auto agar bisa diklik */
+				background-color: #17363a;
+				color: white;
+				border: 2px solid white;
+				border-radius: 20px;
+				padding: 8px 18px;
+				font-size: 14px;
+				font-weight: bold;
+				cursor: pointer;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+				margin-top: 5px;
+				transition: background-color 0.2s, color 0.2s, transform 0.1s;
+			}
+
+			#tooltip-button:hover {
+				background-color: #ffffff;
+				color: #17363a;
+				transform: scale(1.05);
+			}
+
+			/* Ekor (Speech Bubble Tail) - Border luar hitam */
+			#tooltip-content-wrapper::after {
+				content: "";
+				position: absolute;
+				bottom: -19px;
+				left: 50%;
+				transform: translateX(-50%);
+				width: 0;
+				height: 0;
+				border-left: 17px solid transparent;
+				border-right: 17px solid transparent;
+				border-top: 17px solid #000;
+				z-index: 0;
+			}
+
+			/* Ekor (Speech Bubble Tail) - Warna latar belakang dalam */
+			#tooltip-content-wrapper::before {
 				content: "";
 				position: absolute;
 				bottom: -15px;
@@ -89,14 +144,20 @@
 				border-left: 15px solid transparent;
 				border-right: 15px solid transparent;
 				border-top: 15px solid #17363a;
-				outline: 2px solid black;
-				outline-offset: -2px;
+				z-index: 1;
 			}
 		</style>
 	</head>
 	<body>
 		<h2>Peta Jawa Timur</h2>
 		<div id="map-container">
+			<div id="tooltip">
+				<div id="tooltip-content-wrapper">
+					<h2 id="tooltip-title"></h2>
+					<div class="divider"></div>
+					<button id="tooltip-button">BACA SELENGKAPNYA</button>
+				</div>
+			</div>
 			<?xml version="1.0" standalone="no"?>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -436,67 +497,109 @@
 					</filter>
 				</defs>
 			</svg>
-			<div id="tooltip">
-				<div id="tooltip-image-container"></div>
-				<div id="tooltip-text-container"></div>
-			</div>
 		</div>
 	</body>
 	<script>
-		// 1. Ambil semua elemen
-		const paths = document.querySelectorAll("#map-container path"); // Target path di dalam SVG
-		const tooltip = document.getElementById("tooltip");
-		const imageContainer = document.getElementById("tooltip-image-container");
-		const textContainer = document.getElementById("tooltip-text-container");
+		// ====================================
+		// 5. JavaScript Interaksi (Trigger Klik Statis)
+		// ====================================
+		document.addEventListener("DOMContentLoaded", function () {
+			const paths = document.querySelectorAll("#jawatimur-map path");
+			const tooltip = document.getElementById("tooltip");
+			const tooltipTitle = document.getElementById("tooltip-title");
+			const tooltipButton = document.getElementById("tooltip-button");
+			const svgElement = document.getElementById("jawatimur-map");
 
-		paths.forEach((path) => {
-			// Dapatkan data dari <g> terdekat
-			const closestGroup = path.closest("g");
+			let activePath = null; // Menyimpan path yang sedang aktif
 
-			const regionName = closestGroup
-				? closestGroup.getAttribute("data-name")
-				: path.getAttribute("data-name");
-			const imageUrl = closestGroup
-				? closestGroup.getAttribute("data-image")
-				: path.getAttribute("data-image");
+			// --- Fungsi untuk Mendapatkan Titik Tengah (Centroid) Path SVG ---
+			function getPathCenter(path) {
+				const rect = path.getBoundingClientRect();
+				const mapRect = svgElement.getBoundingClientRect();
 
-			// 2. Event ketika mouse masuk (mouseenter)
-			path.addEventListener("mouseenter", (event) => {
-				// a. Isi Teks
-				textContainer.innerHTML = regionName
-					? regionName.toUpperCase()
-					: "NAMA DAERAH";
+				// Hitung pusat X dan Y relatif terhadap elemen SVG (di dalam map-container)
+				const xCenter = (rect.left + rect.right) / 2 - mapRect.left;
+				const yCenter = (rect.top + rect.bottom) / 2 - mapRect.top;
 
-				// b. Isi Gambar
-				if (imageUrl) {
-					imageContainer.style.backgroundImage = `url('${imageUrl}')`;
-					imageContainer.style.backgroundColor = "transparent";
-				} else {
-					imageContainer.style.backgroundImage = "none";
-					imageContainer.style.backgroundColor = "#6c757d"; // Warna abu-abu jika gambar tidak ada
+				return {
+					x: xCenter,
+					y: yCenter,
+				};
+			}
+
+			// --- Data Kota/Kabupaten ---
+			const cityData = {
+				Bangkalan: { name: "BANGKALAN", link: "halaman-bangkalan.html" },
+				Malang: { name: "MALANG", link: "halaman-malang.html" },
+				Banyuwangi: { name: "BANYUWANGI", link: "halaman-banyuwangi.html" },
+				// Lanjutkan data untuk semua daerah Anda
+			};
+
+			// --- Event Listener KLIK pada PATH ---
+			paths.forEach((path) => {
+				const regionName = path.getAttribute("data-name");
+				if (!regionName) return;
+
+				path.addEventListener("click", function (e) {
+					// Mencegah klik menyebar ke latar belakang (agar tidak langsung hilang)
+					e.stopPropagation();
+
+					// JIKA DEBUGGING DIPERLUKAN:
+					console.log(`Daerah ${regionName} diklik.`);
+
+					// Jika path yang sama diklik lagi, tutup pop-up
+					if (activePath === this) {
+						tooltip.style.opacity = "0";
+						tooltip.style.pointerEvents = "none";
+						this.classList.remove("clicked");
+						activePath = null;
+						return;
+					}
+
+					// Reset styling dari path yang sebelumnya diklik
+					if (activePath) {
+						activePath.classList.remove("clicked");
+					}
+
+					if (cityData[regionName]) {
+						const data = cityData[regionName];
+
+						// Set path yang aktif saat ini
+						activePath = this;
+						this.classList.add("clicked");
+
+						// 1. Mendapatkan posisi tengah daerah
+						const center = getPathCenter(this);
+						// JIKA DEBUGGING DIPERLUKAN:
+						console.log(`Koordinat Tooltip: X=${center.x}, Y=${center.y}`);
+
+						// 2. Update Konten Tooltip
+						tooltipTitle.textContent = data.name;
+						tooltipButton.onclick = () => {
+							// Link ke halaman lain
+							window.location.href = data.link;
+						};
+
+						// 3. Set Posisi Tooltip (Statis di tengah daerah)
+						tooltip.style.left = `${center.x}px`;
+						tooltip.style.top = `${center.y - 10}px`;
+
+						// 4. Tampilkan Tooltip dan buat interaktif
+						tooltip.style.opacity = "1";
+						tooltip.style.pointerEvents = "auto";
+					}
+				});
+			});
+
+			// 2. EVENT KLIK pada BACKGROUND SVG (Untuk Menyembunyikan Tooltip)
+			svgElement.addEventListener("click", function () {
+				tooltip.style.opacity = "0";
+				tooltip.style.pointerEvents = "none"; // Nonaktifkan interaksi mouse
+
+				if (activePath) {
+					activePath.classList.remove("clicked");
+					activePath = null;
 				}
-
-				// c. Tampilkan Tooltip
-				tooltip.style.opacity = 1;
-
-				// d. Tambahkan highlight
-				path.classList.add("hovered");
-			});
-
-			// 3. Event ketika mouse bergerak (mousemove)
-			path.addEventListener("mousemove", (event) => {
-				// Posisikan tooltip
-				tooltip.style.left = event.pageX + 15 + "px";
-				tooltip.style.top = event.pageY - 15 + "px";
-			});
-
-			// 4. Event ketika mouse keluar (mouseleave)
-			path.addEventListener("mouseleave", () => {
-				// Sembunyikan tooltip
-				tooltip.style.opacity = 0;
-
-				// Hapus highlight
-				path.classList.remove("hovered");
 			});
 		});
 	</script>
