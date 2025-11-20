@@ -3,21 +3,20 @@
 // Digunakan untuk navigasi menu dan tombol 'Scroll to Top'
 // ====================================================================
 function smoothScroll(targetElement, duration) {
-	// Mengambil posisi target. Jika target adalah body/html, posisinya 0.
 	const targetPosition =
 		targetElement.offsetTop === undefined ? 0 : targetElement.offsetTop;
+
 	const startPosition = window.pageYOffset;
 	const distance = targetPosition - startPosition;
 	let startTime = null;
 
-	// Easing function (Ease In-Out Sine): Pergerakan lebih merata dari awal hingga akhir.
 	function ease(t, b, c, d) {
-		// t = timeElapsed, b = startPosition, c = distance, d = duration
 		return (-c / 2) * (Math.cos((Math.PI * t) / d) - 1) + b;
 	}
 
 	function animation(currentTime) {
 		if (startTime === null) startTime = currentTime;
+
 		const timeElapsed = currentTime - startTime;
 
 		if (timeElapsed < duration) {
@@ -25,7 +24,6 @@ function smoothScroll(targetElement, duration) {
 			window.scrollTo(0, run);
 			requestAnimationFrame(animation);
 		} else {
-			// PENTING: Jika waktu habis, pastikan posisi akhir sudah tepat.
 			window.scrollTo(0, targetPosition);
 		}
 	}
@@ -48,6 +46,7 @@ function setupMapInteractivity() {
 		);
 		return;
 	}
+
 	const mapGroups = mapContainer.querySelectorAll("g[data-name]");
 
 	const formatToSafeUrl = (name) => {
@@ -57,21 +56,57 @@ function setupMapInteractivity() {
 	mapGroups.forEach((groupElement) => {
 		const regionName = groupElement.getAttribute("data-name");
 		const imageUrl = groupElement.getAttribute("data-image");
+		const typeName = groupElement.getAttribute("data-type");
 
-		// --- 1. LOGIKA KLIK (Redirection) ---
+		// ------------------------ 1. LOGIKA KLIK REGION ------------------------
 		if (regionName) {
 			const safeName = formatToSafeUrl(regionName);
-			const targetUrl = `data/daerah${safeName}.html`;
+			const targetUrl = `data/daerah/${typeName}/${safeName}.html`;
 
 			groupElement.addEventListener("click", (event) => {
 				event.stopPropagation();
 				window.location.href = targetUrl;
 			});
+
 			groupElement.style.cursor = "pointer";
 		}
 
-		// --- 2. LOGIKA HOVER/TOOLTIP ---
-		groupElement.addEventListener("mouseenter", (event) => {
+		// ------------------------ 2. LOGIKA NAV DROPDOWN (ASLI) ------------------------
+		document
+			.querySelectorAll('.district-nav a[href^="#"]')
+			.forEach((anchor) => {
+				anchor.addEventListener("click", function (e) {
+					if (this.classList.contains("nav-dropdown-toggle")) {
+						e.preventDefault();
+
+						const parentLi = this.closest(".dropdown-item");
+
+						allDropdownItems().forEach((item) => {
+							if (item !== parentLi) item.classList.remove("active");
+						});
+
+						parentLi.classList.toggle("active");
+
+						if (parentLi.classList.contains("active")) {
+							initialScrollY = window.scrollY;
+						} else {
+							initialScrollY = null;
+						}
+					} else {
+						e.preventDefault();
+
+						const targetId = this.getAttribute("href");
+						const targetElement = document.querySelector(targetId);
+
+						if (targetElement) {
+							smoothScroll(targetElement, SCROLL_DURATION_NAV);
+						}
+					}
+				});
+			});
+
+		// ------------------------ 3. LOGIKA TOOLTIP ------------------------
+		groupElement.addEventListener("mouseenter", () => {
 			textContainer.innerHTML = regionName
 				? regionName.toUpperCase()
 				: "NAMA DAERAH";
@@ -101,65 +136,57 @@ function setupMapInteractivity() {
 }
 
 // ====================================================================
-// LOGIKA UTAMA: DROPDOWN, SMOOTH SCROLL, SCROLL-TO-TOP (MERGED)
+// EVENT: DOCUMENT READY (PEMANGGIL AWAL SETUP NAV BARU & MAP)
+// ====================================================================
+document.addEventListener("DOMContentLoaded", () => {
+	setupDistrictNavigationRedirection();
+});
+
+// ====================================================================
+// LOGIKA UTAMA DROPDOWN + SMOOTH SCROLL + TOMBOL SCROLL TOP
 // ====================================================================
 document.addEventListener("DOMContentLoaded", function () {
-	// Panggil interaktivitas peta
 	setupMapInteractivity();
 
-	// --- KONFIGURASI SCROLL & THRESHOLD ---
-	const SCROLL_THRESHOLD_DROPDOWN = 80; // Jarak scroll minimal agar dropdown tertutup
-	const SCROLL_VISIBILITY_THRESHOLD = 300; // Jarak scroll agar tombol 'ke atas' muncul
-	const SCROLL_DURATION_TOP = 600; // Durasi scroll ke atas (0.6 detik)
-	const SCROLL_DURATION_NAV = 1000; // Durasi scroll navigasi (1.0 detik, sesuai permintaan)
+	// CONFIG
+	const SCROLL_THRESHOLD_DROPDOWN = 250;
+	const SCROLL_VISIBILITY_THRESHOLD = 300;
+	const SCROLL_DURATION_TOP = 600;
+	const SCROLL_DURATION_NAV = 500;
 
 	let initialScrollY = null;
 
-	// Selektor
+	// SELECTORS
 	const allDropdownItems = () =>
 		document.querySelectorAll(".district-nav .dropdown-item");
+
 	const activeDropdowns = () =>
 		document.querySelectorAll(".district-nav .dropdown-item.active");
+
 	const scrollToTopBtn = document.getElementById("scrollToTopBtn");
 
-	function closeAllDropdowns() {
-		if (activeDropdowns().length > 0) {
-			activeDropdowns().forEach((item) => item.classList.remove("active"));
-			initialScrollY = null;
-		}
-	}
-
-	// A. SETUP & PENANGANAN KLIK TERPADU (FIX KONFLIK DROPDOWN)
-	// Target SEMUA link di district-nav yang mengarah ke ID (#)
+	// ------------------------ A. KLIK DROPDOWN NAV ------------------------
 	document.querySelectorAll('.district-nav a[href^="#"]').forEach((anchor) => {
 		anchor.addEventListener("click", function (e) {
-			// 1. LOGIKA DROPDOWN TOGGLE (Kabupaten/Kota)
 			if (this.classList.contains("nav-dropdown-toggle")) {
 				e.preventDefault();
 
 				const parentLi = this.closest(".dropdown-item");
 
-				// Tutup semua dropdown yang lain
 				allDropdownItems().forEach((item) => {
-					if (item !== parentLi) {
-						item.classList.remove("active");
-					}
+					if (item !== parentLi) item.classList.remove("active");
 				});
 
-				// Buka/tutup dropdown saat ini
 				parentLi.classList.toggle("active");
 
-				// Set posisi scroll awal untuk threshold
 				if (parentLi.classList.contains("active")) {
 					initialScrollY = window.scrollY;
 				} else {
 					initialScrollY = null;
 				}
-			}
-
-			// 2. LOGIKA SMOOTH SCROLL (Untuk Geografi, Ekonomi, dll.)
-			else {
+			} else {
 				e.preventDefault();
+
 				const targetId = this.getAttribute("href");
 				const targetElement = document.querySelector(targetId);
 
@@ -170,24 +197,23 @@ document.addEventListener("DOMContentLoaded", function () {
 		});
 	});
 
-	// B. LOGIKA TOMBOL SCROLL-TO-TOP
+	// ------------------------ B. TOMBOL SCROLL KE ATAS ------------------------
 	if (scrollToTopBtn) {
-		scrollToTopBtn.addEventListener("click", function () {
-			// Target: document.body memiliki offsetTop = 0, yang akan scroll ke atas.
+		scrollToTopBtn.addEventListener("click", () => {
 			smoothScroll(document.body, SCROLL_DURATION_TOP);
 			closeAllDropdowns();
 		});
 	}
 
-	// C. TUTUP DROPDOWN KARENA KLIK LUAR & SCROLL THRESHOLD
-	document.addEventListener("click", function (event) {
+	// ------------------------ C. EVENT KLIK DI LUAR DROPDOWN ------------------------
+	document.addEventListener("click", (event) => {
 		if (!event.target.closest(".dropdown-item")) {
 			closeAllDropdowns();
 		}
 	});
 
-	window.addEventListener("scroll", function () {
-		// Logika 1: Menutup Dropdown
+	// ------------------------ D. EVENT SCROLL ------------------------
+	window.addEventListener("scroll", () => {
 		if (activeDropdowns().length > 0 && initialScrollY !== null) {
 			const currentScrollY = window.scrollY;
 			const scrollDistance = Math.abs(currentScrollY - initialScrollY);
@@ -197,7 +223,6 @@ document.addEventListener("DOMContentLoaded", function () {
 			}
 		}
 
-		// Logika 2: Menampilkan/Menyembunyikan Tombol Scroll-to-Top
 		if (scrollToTopBtn) {
 			if (window.pageYOffset > SCROLL_VISIBILITY_THRESHOLD) {
 				scrollToTopBtn.classList.add("show");
@@ -206,4 +231,38 @@ document.addEventListener("DOMContentLoaded", function () {
 			}
 		}
 	});
+
+	// ------------------------ FUNGSI BANTU ------------------------
+	function closeAllDropdowns() {
+		activeDropdowns().forEach((item) => item.classList.remove("active"));
+		initialScrollY = null;
+	}
 });
+
+// ====================================================================
+// NAVIGATION REDIRECTION LIKE SVG
+// ====================================================================
+function setupNavLikeSVG() {
+	const formatToSafeUrl = (name) => {
+		return name.toLowerCase().replace(/\s+/g, "-");
+	};
+
+	const navItems = document.querySelectorAll(".district-nav a[data-name]");
+
+	navItems.forEach((item) => {
+		const regionName = item.getAttribute("data-name");
+		const regionType = item.getAttribute("data-type");
+
+		if (!regionName || !regionType) return;
+
+		const safeName = formatToSafeUrl(regionName);
+		const targetUrl = `data/daerah/${regionType}/${regionType}-${safeName}.html`;
+
+		item.addEventListener("click", (e) => {
+			e.preventDefault();
+			window.location.href = targetUrl;
+		});
+	});
+}
+
+setupNavLikeSVG();
