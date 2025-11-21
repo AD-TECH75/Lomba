@@ -6,7 +6,7 @@
 :root {
 	--primary-color: #007bff; /* 💥 PERUBAHAN: Biru (Aksen Utama, dari a/h2 di template) */
 	--accent-color: #0056b3; /* 💥 PERUBAHAN: Biru Gelap (Highlight & Interaktif, dari a:hover di template) */
-	--secondary-color: #004c99; /* 💥 PERUBAHAN: Biru Kuat (Peta Fill/Latar Sekunder, dari aside h2 di template) */
+	--secondary-color: #034588; /* 💥 PERUBAHAN: Biru Kuat (Peta Fill/Latar Sekunder, dari aside h2 di template) */
 	--bg-light: #f0f2f5; /* 💥 PERUBAHAN: Background Area Bersih (Lebih terang, dari body di template) */
 	--bg-white: #ffffff; /* Background Kartu/Header (Putih Murni) */
 	--text-dark: #333; /* 💥 PERUBAHAN: Teks Gelap Standar (Dari body color di template) */
@@ -401,6 +401,13 @@ g.hovered path {
 	border-bottom: 3px solid var(--accent-color);
 }
 
+#tooltip-image-container img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
 #tooltip-text-container {
 	padding: 10px 15px;
 	font-weight: 700;
@@ -409,6 +416,7 @@ g.hovered path {
 	line-height: 1.3;
 	color: var(--primary-color);
 }
+
 
 /* ==================================== */
 /* 4. GAYA UNTUK AREA KONTEN (Informatif) */
@@ -660,5 +668,7 @@ img {
 	opacity: 1;
 	visibility: visible;
 }
+
+
 
 
