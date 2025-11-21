@@ -1,30 +1,32 @@
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadTemplate("assets/tamplate/header.html", "header-container");
-    loadTemplate("assets/tamplate/footer.html", "footer-container");
-});
-
 function loadTemplate(path, containerId) {
     const target = document.getElementById(containerId);
     if (!target) {
-        console.log("Container tidak ditemukan:", containerId);
+        console.warn("Container tidak ditemukan:", containerId);
         return;
     }
 
-    // Jika di GitHub Pages → prepend nama repo
-    const repoName = "Jatimidia"; // GANTI INI
-    const basePath = window.location.hostname.includes("github.io")
-        ? `/${repoName}/${path}`
-        : path;
-
-    fetch(basePath)
-        .then(res => {
-            if (!res.ok) throw new Error(res.status);
-            return res.text();
-        })
-        .then(html => target.innerHTML = html)
-        .catch(err => console.error("Gagal load:", err, basePath));
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", path);
+    xhr.onload = () => {
+        if (xhr.status === 200 || xhr.status === 0) {
+            target.innerHTML = xhr.responseText;
+        } else {
+            console.error("Gagal load:", xhr.status, path);
+        }
+    };
+    xhr.onerror = () => console.error("XHR error:", path);
+    xhr.send();
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("Load header...");
+    loadTemplate("../../../assets/tamplate/header.html", "header-container");
+
+    console.log("Load footer...");
+    loadTemplate("../../../assets/tamplate/footer.html", "footer-container");
+});
+
 
 
 
