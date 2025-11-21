@@ -163,6 +163,47 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", function () {
 	setupMapInteractivity();
 
+	const menuToggleBtn = document.getElementById('menu-toggle-btn');
+    const navLinks = document.getElementById('main-nav-links');
+    const body = document.body;
+
+    if (menuToggleBtn && navLinks) {
+        menuToggleBtn.addEventListener('click', () => {
+            // Toggle class 'open' pada tombol dan daftar link
+            menuToggleBtn.classList.toggle('open');
+            navLinks.classList.toggle('open');
+            
+            // Opsional: mencegah scrolling body saat menu terbuka di HP
+            body.classList.toggle('menu-active'); 
+        });
+    }
+
+	// ====================================================================
+    // FUNGSI TOGGLE DROPDOWN NAVIGASI MOBILE (di dalam Hamburger)
+    // ====================================================================
+    const mobileDropdowns = document.querySelectorAll('.mobile-district-nav .dropdown-item');
+
+    mobileDropdowns.forEach(item => {
+        const toggle = item.querySelector('.nav-dropdown-toggle');
+        const content = item.querySelector('.dropdown-content');
+
+        toggle.addEventListener('click', (e) => {
+            e.preventDefault(); // Mencegah pindah halaman
+            
+            // Toggle visibility dan ketinggian
+            if (content.style.height === "0px" || content.style.height === "") {
+                content.style.visibility = 'visible';
+                content.style.opacity = '1';
+                // Hitung tinggi konten dan atur ketinggian (penting untuk animasi)
+                content.style.height = content.scrollHeight + "px";
+            } else {
+                content.style.height = '0px';
+                content.style.opacity = '0';
+                content.style.visibility = 'hidden';
+            }
+        });
+    });
+
 	// CONFIG
 	const SCROLL_THRESHOLD_DROPDOWN = 250;
 	const SCROLL_VISIBILITY_THRESHOLD = 300;
@@ -324,4 +365,3 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTheme(false);
     }
 });
-
