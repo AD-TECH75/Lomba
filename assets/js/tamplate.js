@@ -1,17 +1,30 @@
-// js/template.js
-async function loadTemplate(templateFile, elementId) {
-    try {
-        const response = await fetch(templateFile);
-        const html = await response.text();
-        document.getElementById(elementId).innerHTML = html;
-    } catch (error) {
-        console.error('Error loading template:', error);
+document.addEventListener("DOMContentLoaded", () => {
+    // Ganti path relatif sesuai lokasi file HTML yang sedang dibuka
+    loadTemplate("../../../../assets/tamplate/header.html", "header-container");
+    loadTemplate("../../../../assets/tamplate/footer.html", "footer-container");
+});
+
+function loadTemplate(path, containerId) {
+    const target = document.getElementById(containerId);
+    if (!target) {
+        console.log("Container tidak ditemukan:", containerId);
+        return;
     }
-}
 
-function loadAllTemplates() {
-    loadTemplate('template/header.html', 'header-container');
-    loadTemplate('template/footer.html', 'footer-container');
-}
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", path);
 
-document.addEventListener('DOMContentLoaded', loadAllTemplates);
+    xhr.onload = () => {
+        // status 200 = HTTP OK
+        // status 0 = GitHub Pages tidak pakai (hanya local), tapi tetap kita anggap OK
+        if (xhr.status === 200 || xhr.status === 0) {
+            target.innerHTML = xhr.responseText;
+        } else {
+            console.error("Gagal load:", xhr.status, path);
+        }
+    };
+
+    xhr.onerror = () => console.error("XHR error:", path);
+
+    xhr.send();
+}
